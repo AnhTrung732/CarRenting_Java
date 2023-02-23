@@ -32,17 +32,11 @@
             android:name=".ActivityPages.StartAppActivity"
             android:exported="true"
             android:theme="@style/Theme.CarRenting.NoActionBar" >
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".Service.Vehicle.AddVehicleActivity"
-
-            android:theme="@style/Theme.CarRenting.NoActionBar">
         </activity>
         <activity
             android:name=".Service.UserAuthentication.Register.UploadCiCardActivity"
@@ -51,7 +45,6 @@
         <activity
             android:name=".Service.UserAuthentication.Register.SignProfileActivity"
             android:theme="@style/Theme.CarRenting.NoActionBar">
-
         </activity>
         <activity
             android:name=".Service.UserAuthentication.ForgotPasswordActivity"
@@ -79,6 +72,34 @@
         <activity
             android:name=".ActivityPages.CustomerMainActivity"
             android:theme="@style/Theme.CarRenting.NoActionBar" />
+        <activity
+            android:name=".Service.Vehicle.VehicleCardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Service.Vehicle.VehicleDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Service.Vehicle.UpdateVehicleAcitivty"
+            android:exported="false">/>
+        </activity>
+        <activity
+            android:name=".Service.Vehicle.AddVehicleActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Service.Booking.RequestSuccessActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Service.Booking.CarDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Service.Booking.ScheduleSelectActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Service.Activity.OwnerActivityDetail"
+            android:exported="false" />
+        <activity
+            android:name=".Service.Activity.CustomerActivityDetail"
+            android:exported="false" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_api_key" />
