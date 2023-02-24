@@ -10,9 +10,9 @@
         <item android:id="@+id/nav_message"
             android:title="@string/nav_message"
             android:icon="@drawable/ic_message"/>
-        <item android:id="@+id/nav_setting"
-            android:title="@string/nav_setting"
-            android:icon="@drawable/ic_setting"/>
+        <item android:id="@+id/nav_map"
+            android:title="@string/nav_map"
+            android:icon="@drawable/google_maps"/>
     </group>
 
     <item android:title="@string/nav_user">

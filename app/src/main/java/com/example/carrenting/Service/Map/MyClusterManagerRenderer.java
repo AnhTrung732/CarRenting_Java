@@ -39,9 +39,7 @@ public class MyClusterManagerRenderer extends DefaultClusterRenderer<ClusterMark
         int padding = (int) context.getResources().getDimension(R.dimen.custom_marker_padding);
         imageView.setPadding(padding, padding, padding, padding);
         iconGenerator.setContentView(imageView);
-
     }
-
     /**
      * Rendering of the individual ClusterItems
      * @param item

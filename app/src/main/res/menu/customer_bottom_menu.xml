@@ -17,11 +17,16 @@
         android:title="user"
         android:icon="@drawable/ic_user"
         tools:ignore="HardcodedText" />-->
-
     <item
         android:id="@+id/message"
         android:title="Message"
         android:icon="@drawable/ic_message"
+        tools:ignore="HardcodedText" />
+
+    <item
+        android:id="@+id/map"
+        android:title="Map"
+        android:icon="@drawable/google_maps"
         tools:ignore="HardcodedText" />
 
 </menu>
