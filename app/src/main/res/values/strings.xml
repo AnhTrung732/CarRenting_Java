@@ -18,7 +18,7 @@
     <string name="nav_home">Trang chủ</string>
     <string name="nav_activity">Hoạt động</string>
     <string name="nav_message">Tin nhắn</string>
-    <string name="nav_setting">Cài đặt</string>
+    <string name="nav_map">Bản đồ</string>
 
     <string name="nav_user">Người dùng</string>
     <string name="nav_infor">Thông tin tài khoản</string>
@@ -69,6 +69,8 @@
     <string name="intent_chatroom">intent_chatroom</string>
     <string name="intent_user_list">intent_user_list</string>
     <string name="intent_user_locations">intent_user_locations</string>
+    <string name="intent_all_user">intent_all_user</string>
+    <string name="intent_all_user_locations">intent_all_user_locations</string>
     <string name="intent_location">intent_location</string>
 
     <!-- Service and Broadcasts -->
