@@ -1,6 +1,5 @@
 package com.example.carrenting.FragmentPages.Customer;
 
-import static android.content.ContentValues.TAG;
 import static com.example.carrenting.Service.Map.Constants.MAPVIEW_BUNDLE_KEY;
 
 import android.animation.ObjectAnimator;
@@ -8,7 +7,9 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.Bundle;
+
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -22,7 +23,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 
 import com.example.carrenting.Adapter.UserRecyclerAdapter;
 import com.example.carrenting.Model.ClusterMarker;
@@ -31,7 +34,6 @@ import com.example.carrenting.Model.User;
 import com.example.carrenting.Model.UserLocation;
 import com.example.carrenting.R;
 import com.example.carrenting.Service.Map.MyClusterManagerRenderer;
-import com.example.carrenting.Service.Map.UserListFragment;
 import com.example.carrenting.Service.Map.ViewWeightAnimationWrapper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -61,65 +63,69 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CustomerMapFragment extends Fragment implements
-    OnMapReadyCallback,
-    View.OnClickListener,
-    GoogleMap.OnInfoWindowClickListener,
-    GoogleMap.OnPolylineClickListener,
-            UserRecyclerAdapter.UserListRecyclerClickListener
-    {
+        OnMapReadyCallback,
+        View.OnClickListener,
+        GoogleMap.OnInfoWindowClickListener,
+        GoogleMap.OnPolylineClickListener,
+        UserRecyclerAdapter.UserListRecyclerClickListener
+{
 
-        private static final int MAP_LAYOUT_STATE_CONTRACTED = 0;
-        private static final int MAP_LAYOUT_STATE_EXPANDED = 1;
-
-
-        //widgets
-        private RecyclerView mUserListRecyclerView;
-        private MapView mMapView;
-        private RelativeLayout mMapContainer;
+    private static final String TAG = "UserListFragment";
+    private static final int MAP_LAYOUT_STATE_CONTRACTED = 0;
+    private static final int MAP_LAYOUT_STATE_EXPANDED = 1;
 
 
-        //vars
-        private ArrayList<User> mUserList = new ArrayList<>();
-        private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
-        private GoogleMap mGoogleMap;
-        private UserLocation mUserPosition;
-        private LatLngBounds mMapBoundary;
-        private ClusterManager<ClusterMarker> mClusterManager;
-        private MyClusterManagerRenderer mClusterManagerRenderer;
-        private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
-        private int mMapLayoutState = 0;
-        private GeoApiContext mGeoApiContext;
-        private ArrayList<PolylineData> mPolyLinesData = new ArrayList<>();
-        private Marker mSelectedMarker = null;
-        private ArrayList<Marker> mTripMarkers = new ArrayList<>();
+    //widgets
+    private RecyclerView mUserListRecyclerView;
+    private MapView mMapView;
+    private RelativeLayout mMapContainer;
 
 
+    //vars
+    private ArrayList<User> mUserList = new ArrayList<>();
+    private ArrayList<UserLocation> mUserLocations = new ArrayList<>();
+    private UserRecyclerAdapter mUserRecyclerAdapter;
+    private GoogleMap mGoogleMap;
+    private UserLocation mUserPosition;
+    private LatLngBounds mMapBoundary;
+    private ClusterManager<ClusterMarker> mClusterManager;
+    private MyClusterManagerRenderer mClusterManagerRenderer;
+    private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
+    private int mMapLayoutState = 0;
+    private GeoApiContext mGeoApiContext;
+    private ArrayList<PolylineData> mPolyLinesData = new ArrayList<>();
+    private Marker mSelectedMarker = null;
+    private ArrayList<Marker> mTripMarkers = new ArrayList<>();
 
-        @Override
-        public void onCreate(@Nullable Bundle savedInstanceState) {
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-            if (mUserLocations.size() == 0) { // make sure the list doesn't duplicate by navigating back
-                if (getArguments() != null) {
-                    final ArrayList<User> users = getArguments().getParcelableArrayList(getString(R.string.intent_all_user));
-                    mUserList.addAll(users);
+        if (mUserLocations.size() == 0) { // make sure the list doesn't duplicate by navigating back
+            if (getArguments() != null) {
+                final ArrayList<User> users = getArguments().getParcelableArrayList(getString(R.string.intent_all_user));
+                mUserList.addAll(users);
 
-                    final ArrayList<UserLocation> locations = getArguments().getParcelableArrayList(getString(R.string.intent_all_user_locations));
+                final ArrayList<UserLocation> locations = getArguments().getParcelableArrayList(getString(R.string.intent_all_user_locations));
 
-                    Log.d("myTag", String.valueOf(locations));
+                Log.d("myTag", String.valueOf(locations));
 
-                    mUserLocations.addAll(locations);
-                }
+                mUserLocations.addAll(locations);
             }
+        }
     }
 
-        @Nullable
-        @Override
-        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.customer_fragment_map, container, false);
+        mUserListRecyclerView = view.findViewById(R.id.user_list_recycler_view);
         mMapView = view.findViewById(R.id.user_list_map);
+        view.findViewById(R.id.btn_full_screen_map).setOnClickListener(this);
         view.findViewById(R.id.btn_reset_map).setOnClickListener(this);
         mMapContainer = view.findViewById(R.id.map_container);
 
+        initUserListRecyclerView();
         initGoogleMap(savedInstanceState);
 
         setUserPosition();
@@ -127,11 +133,11 @@ public class CustomerMapFragment extends Fragment implements
         return view;
     }
 
-        private Handler mHandler = new Handler();
-        private Runnable mRunnable;
-        private static final int LOCATION_UPDATE_INTERVAL = 3000;
+    private Handler mHandler = new Handler();
+    private Runnable mRunnable;
+    private static final int LOCATION_UPDATE_INTERVAL = 3000;
 
-        private void startUserLocationsRunnable(){
+    private void startUserLocationsRunnable(){
         Log.d(TAG, "startUserLocationsRunnable: starting runnable for retrieving updated locations.");
         mHandler.postDelayed(mRunnable = new Runnable() {
             @Override
@@ -142,11 +148,11 @@ public class CustomerMapFragment extends Fragment implements
         }, LOCATION_UPDATE_INTERVAL);
     }
 
-        private void stopLocationUpdates(){
+    private void stopLocationUpdates(){
         mHandler.removeCallbacks(mRunnable);
     }
 
-        private void retrieveUserLocations(){
+    private void retrieveUserLocations(){
         Log.d(TAG, "retrieveUserLocations: retrieving location of all users in the chatroom.");
 
         try{
@@ -192,7 +198,7 @@ public class CustomerMapFragment extends Fragment implements
 
     }
 
-        private void resetMap(){
+    private void resetMap(){
         if(mGoogleMap != null) {
             mGoogleMap.clear();
 
@@ -212,7 +218,7 @@ public class CustomerMapFragment extends Fragment implements
         }
     }
 
-        private void addMapMarkers(){
+    private void addMapMarkers(){
 
         if(mGoogleMap != null){
 
@@ -270,11 +276,11 @@ public class CustomerMapFragment extends Fragment implements
         }
     }
 
-        /**
-         * Determines the view boundary then sets the camera
-         * Sets the view
-         */
-        private void setCameraView() {
+    /**
+     * Determines the view boundary then sets the camera
+     * Sets the view
+     */
+    private void setCameraView() {
 
         // Set a boundary to start
         double bottomBoundary = mUserPosition.getGeo_point().getLatitude() - .1;
@@ -290,18 +296,15 @@ public class CustomerMapFragment extends Fragment implements
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary, 0));
     }
 
-        private void setUserPosition() {
-            Log.d(TAG, "onEvent: user location list size 111: " + mUserLocations.size());
+    private void setUserPosition() {
         for (UserLocation userLocation : mUserLocations) {
-            Log.d("getUser_id()",userLocation.getUser().getUser_id().toString());
-            Log.d("FirebaseAuth",FirebaseAuth.getInstance().getUid());
             if (userLocation.getUser().getUser_id().equals(FirebaseAuth.getInstance().getUid())) {
                 mUserPosition = userLocation;
             }
         }
     }
 
-        private void initGoogleMap(Bundle savedInstanceState) {
+    private void initGoogleMap(Bundle savedInstanceState) {
         // *** IMPORTANT ***
         // MapView requires that the Bundle you pass contain _ONLY_ MapView SDK
         // objects or sub-Bundles.
@@ -321,9 +324,14 @@ public class CustomerMapFragment extends Fragment implements
         }
     }
 
+    private void initUserListRecyclerView() {
+        mUserRecyclerAdapter = new UserRecyclerAdapter(mUserList, this);
+        mUserListRecyclerView.setAdapter(mUserRecyclerAdapter);
+        mUserListRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+    }
 
-        @Override
-        public void onSaveInstanceState(Bundle outState) {
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
         Bundle mapViewBundle = outState.getBundle(MAPVIEW_BUNDLE_KEY);
@@ -335,27 +343,27 @@ public class CustomerMapFragment extends Fragment implements
         mMapView.onSaveInstanceState(mapViewBundle);
     }
 
-        @Override
-        public void onResume() {
+    @Override
+    public void onResume() {
         super.onResume();
         mMapView.onResume();
         startUserLocationsRunnable(); // update user locations every 'LOCATION_UPDATE_INTERVAL'
     }
 
-        @Override
-        public void onStart() {
+    @Override
+    public void onStart() {
         super.onStart();
         mMapView.onStart();
     }
 
-        @Override
-        public void onStop() {
+    @Override
+    public void onStop() {
         super.onStop();
         mMapView.onStop();
     }
 
-        @Override
-        public void onMapReady(GoogleMap map) {
+    @Override
+    public void onMapReady(GoogleMap map) {
 //        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
 //                != PackageManager.PERMISSION_GRANTED
 //                && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -371,28 +379,46 @@ public class CustomerMapFragment extends Fragment implements
         mGoogleMap.setOnPolylineClickListener(this);
     }
 
-        @Override
-        public void onPause() {
+    @Override
+    public void onPause() {
         mMapView.onPause();
         stopLocationUpdates(); // stop updating user locations
         super.onPause();
     }
 
-        @Override
-        public void onDestroy() {
+    @Override
+    public void onDestroy() {
         mMapView.onDestroy();
         super.onDestroy();
     }
 
-        @Override
-        public void onLowMemory() {
+    @Override
+    public void onLowMemory() {
         super.onLowMemory();
         mMapView.onLowMemory();
     }
 
 
+    private void expandMapAnimation(){
+        ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
+        ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
+                "weight",
+                50,
+                100);
+        mapAnimation.setDuration(800);
 
-        private void contractMapAnimation(){
+        ViewWeightAnimationWrapper recyclerAnimationWrapper = new ViewWeightAnimationWrapper(mUserListRecyclerView);
+        ObjectAnimator recyclerAnimation = ObjectAnimator.ofFloat(recyclerAnimationWrapper,
+                "weight",
+                50,
+                0);
+        recyclerAnimation.setDuration(800);
+
+        recyclerAnimation.start();
+        mapAnimation.start();
+    }
+
+    private void contractMapAnimation(){
         ViewWeightAnimationWrapper mapAnimationWrapper = new ViewWeightAnimationWrapper(mMapContainer);
         ObjectAnimator mapAnimation = ObjectAnimator.ofFloat(mapAnimationWrapper,
                 "weight",
@@ -411,10 +437,21 @@ public class CustomerMapFragment extends Fragment implements
         mapAnimation.start();
     }
 
-        @Override
-        public void onClick(View v) {
+    @Override
+    public void onClick(View v) {
         switch (v.getId()){
+            case R.id.btn_full_screen_map:{
 
+                if(mMapLayoutState == MAP_LAYOUT_STATE_CONTRACTED){
+                    mMapLayoutState = MAP_LAYOUT_STATE_EXPANDED;
+                    expandMapAnimation();
+                }
+                else if(mMapLayoutState == MAP_LAYOUT_STATE_EXPANDED){
+                    mMapLayoutState = MAP_LAYOUT_STATE_CONTRACTED;
+                    contractMapAnimation();
+                }
+                break;
+            }
 
             case R.id.btn_reset_map:{
                 addMapMarkers();
@@ -423,8 +460,8 @@ public class CustomerMapFragment extends Fragment implements
         }
     }
 
-        @Override
-        public void onInfoWindowClick(final Marker marker) {
+    @Override
+    public void onInfoWindowClick(final Marker marker) {
         if(marker.getTitle().contains("Trip #")){
             final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             builder.setMessage("Open Google Maps?")
@@ -485,7 +522,7 @@ public class CustomerMapFragment extends Fragment implements
 
     }
 
-        private void calculateDirections(Marker marker){
+    private void calculateDirections(Marker marker){
         Log.d(TAG, "calculateDirections: calculating directions.");
 
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
@@ -522,7 +559,7 @@ public class CustomerMapFragment extends Fragment implements
         });
     }
 
-        private void resetSelectedMarker(){
+    private void resetSelectedMarker(){
         if(mSelectedMarker != null){
             mSelectedMarker.setVisible(true);
             mSelectedMarker = null;
@@ -530,13 +567,13 @@ public class CustomerMapFragment extends Fragment implements
         }
     }
 
-        private void removeTripMarkers(){
+    private void removeTripMarkers(){
         for(Marker marker: mTripMarkers){
             marker.remove();
         }
     }
 
-        private void addPolylinesToMap(final DirectionsResult result){
+    private void addPolylinesToMap(final DirectionsResult result){
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
@@ -585,7 +622,7 @@ public class CustomerMapFragment extends Fragment implements
         });
     }
 
-        public void zoomRoute(List<LatLng> lstLatLngRoute) {
+    public void zoomRoute(List<LatLng> lstLatLngRoute) {
 
         if (mGoogleMap == null || lstLatLngRoute == null || lstLatLngRoute.isEmpty()) return;
 
@@ -603,8 +640,8 @@ public class CustomerMapFragment extends Fragment implements
         );
     }
 
-        @Override
-        public void onPolylineClick(Polyline polyline) {
+    @Override
+    public void onPolylineClick(Polyline polyline) {
 
         int index = 0;
         for(PolylineData polylineData: mPolyLinesData){
@@ -636,8 +673,8 @@ public class CustomerMapFragment extends Fragment implements
         }
     }
 
-        @Override
-        public void onUserClicked(int position) {
+    @Override
+    public void onUserClicked(int position) {
         Log.d(TAG, "onUserClicked: selected a user: " + mUserList.get(position).getUser_id());
 
         String selectedUserId = mUserList.get(position).getUser_id();
