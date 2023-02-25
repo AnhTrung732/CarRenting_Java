@@ -37,7 +37,7 @@ public class ValidatePhoneActivity extends AppCompatActivity {
 
     private EditText otpNumberOne, getOtpNumberTwo, getOtpNumberThree, getOtpNumberFour, getOtpNumberFive, otpNumberSix;
     private Button btnSendCode;
-    private TextView tvResend;
+    private TextView tvResend, tvValidateLater;
 
     private String mVerificationId;
     PhoneAuthProvider.ForceResendingToken mResendToken;
@@ -113,6 +113,15 @@ public class ValidatePhoneActivity extends AppCompatActivity {
             }
         });
 
+        tvValidateLater.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Intent intent = new Intent(ValidatePhoneActivity.this, SignProfileActivity.class);
+                        startActivity(intent);
+                        finishAffinity();
+                    }
+                }
+        );
 
         SendOtpCode(phoneNumber);
 
@@ -196,5 +205,6 @@ public class ValidatePhoneActivity extends AppCompatActivity {
 
         btnSendCode = findViewById(R.id.btnSendCode);
         tvResend = findViewById(R.id.tvResend);
+        tvValidateLater = findViewById(R.id.tvValidateLater);
     }
 }

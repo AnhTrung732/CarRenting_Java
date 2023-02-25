@@ -20,12 +20,16 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,20 +50,26 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import com.example.carrenting.Adapter.ChatroomRecyclerAdapter;
 import com.example.carrenting.FragmentPages.Customer.CustomerActivityFragment;
 import com.example.carrenting.FragmentPages.Customer.CustomerHomeFragment;
 import com.example.carrenting.FragmentPages.Customer.CustomerMapFragment;
 import com.example.carrenting.FragmentPages.Customer.CustomerMessageFragment;
 import com.example.carrenting.FragmentPages.Customer.UserInfor.MyProfileFragment;
+import com.example.carrenting.Model.Chatroom;
 import com.example.carrenting.Model.User;
 import com.example.carrenting.Model.UserClient;
 import com.example.carrenting.Model.UserLocation;
 import com.example.carrenting.R;
+import com.example.carrenting.Service.Map.ChatroomActivity;
 import com.example.carrenting.Service.Map.LocationService;
 import com.example.carrenting.Service.Map.MapMainActivity;
+import com.example.carrenting.Service.Map.ProfileActivity;
 import com.example.carrenting.Service.Map.UserListFragment;
 import com.example.carrenting.Service.UserAuthentication.LoginActivity;
 import com.google.android.gms.common.ConnectionResult;
@@ -71,6 +81,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -86,6 +97,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.annotation.Nullable;
 
 
 public class CustomerMainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -116,9 +131,17 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
     private FirebaseFirestore mDb;
     User mUser;
     private CustomerMainActivity mMainActivity;
-
-    private boolean mLocationPermissionGranted = false;
+    //Chat
+    private ProgressBar mProgressBar;
+    private ArrayList<Chatroom> mChatrooms = new ArrayList<>();
+    private Set<String> mChatroomIds = new HashSet<>();
+    private ListenerRegistration mChatroomEventListener;
+    private CustomerMessageFragment myCustomerMessageFragment = new CustomerMessageFragment();
+    private ChatroomRecyclerAdapter mChatroomRecyclerAdapter;
     private FusedLocationProviderClient mFusedLocationClient;
+    private boolean mLocationPermissionGranted = false;
+    private RecyclerView mChatroomRecyclerView;
+    //Map
     private UserLocation mUserLocation;
     private ListenerRegistration mUserListEventListener;
     private ArrayList<User> mUserList = new ArrayList<>();
@@ -186,8 +209,12 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
 
         initUI();
         showUserInformation();
+        //Map
         getAllUser();
         getAllUserLocation();
+        //Chat
+//        initSupportActionBar();
+//        initChatroomRecyclerView();
     }
 
 
@@ -511,44 +538,25 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
     }
 
     // MAP
-    private static final String TAG = "MapActivity";
-
-    private boolean isLocationServiceRunning() {
-        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
-            if("com.codingwithmitch.googledirectionstest.services.LocationService".equals(service.service.getClassName())) {
-                Log.d(TAG, "isLocationServiceRunning: location service is already running.");
-                return true;
-            }
-        }
-        Log.d(TAG, "isLocationServiceRunning: location service is not running.");
-        return false;
-    }
-
-    private void getUserDetails(){
-        if(mUserLocation == null){
-            mUserLocation = new UserLocation();
-            DocumentReference userRef = mDb.collection(getString(R.string.collection_users))
-                    .document(FirebaseAuth.getInstance().getUid());
-
-            userRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                @Override
-                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                    if(task.isSuccessful()){
-                        Log.d(TAG, "onComplete: successfully set the user client.");
-                        User user = task.getResult().toObject(User.class);
-                        mUserLocation.setUser(user);
-                        ((UserClient)(getApplicationContext())).setUser(user);
-                        getLastKnownLocation();
-                    }
-                }
-            });
-        }
-        else{
-            getLastKnownLocation();
+    public void getLocationPermission() {
+        /*
+         * Request location permission, so that we can get the location of the
+         * device. The result of the permission request is handled by a callback,
+         * onRequestPermissionsResult.
+         */
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            mLocationPermissionGranted = true;
+            myCustomerMessageFragment.getChatrooms();
+            myCustomerMessageFragment.getUserDetails();
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
     }
-    private void startLocationService(){
+    public void startLocationService(){
         if(!isLocationServiceRunning()){
             Intent serviceIntent = new Intent(this, LocationService.class);
 //        this.startService(serviceIntent);
@@ -561,100 +569,6 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
             }
         }
     }
-    private void getLastKnownLocation() {
-        Log.d(TAG, "getLastKnownLocation: called.");
-
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        mFusedLocationClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<android.location.Location>() {
-            @Override
-            public void onComplete(@NonNull Task<android.location.Location> task) {
-                if (task.isSuccessful()) {
-                    Location location = task.getResult();
-                    GeoPoint geoPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
-                    mUserLocation.setGeo_point(geoPoint);
-                    mUserLocation.setTimestamp(null);
-                    saveUserLocation();
-                    startLocationService();
-                }
-            }
-        });
-
-    }
-
-    private void saveUserLocation(){
-
-        if(mUserLocation != null){
-            DocumentReference locationRef = mDb
-                    .collection(getString(R.string.collection_user_locations))
-                    .document(FirebaseAuth.getInstance().getUid());
-
-            locationRef.set(mUserLocation).addOnCompleteListener(new OnCompleteListener<Void>() {
-                @Override
-                public void onComplete(@NonNull Task<Void> task) {
-                    if(task.isSuccessful()){
-                        Log.d(TAG, "saveUserLocation: \ninserted user location into database." +
-                                "\n latitude: " + mUserLocation.getGeo_point().getLatitude() +
-                                "\n longitude: " + mUserLocation.getGeo_point().getLongitude());
-                    }
-                }
-            });
-        }
-    }
-
-    private boolean checkMapServices(){
-        if(isServicesOK()){
-            if(isMapsEnabled()){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void buildAlertMessageNoGps() {
-        final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setMessage("This application requires GPS to work properly, do you want to enable it?")
-                .setCancelable(false)
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
-                        Intent enableGpsIntent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                        startActivityForResult(enableGpsIntent, PERMISSIONS_REQUEST_ENABLE_GPS);
-                    }
-                });
-        final android.app.AlertDialog alert = builder.create();
-        alert.show();
-    }
-
-    public boolean isMapsEnabled(){
-        final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
-
-        if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
-            buildAlertMessageNoGps();
-            return false;
-        }
-        return true;
-    }
-
-    private void getLocationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
-            getUserDetails();
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-        }
-    }
-
     public boolean isServicesOK(){
         Log.d(TAG, "isServicesOK: checking google services version");
 
@@ -669,14 +583,74 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
         else if(GoogleApiAvailability.getInstance().isUserResolvableError(available)){
             //an error occured but we can resolve it
             Log.d(TAG, "isServicesOK: an error occured but we can fix it");
-            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(CustomerMainActivity.this, available, ERROR_DIALOG_REQUEST);
+            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(this, available, ERROR_DIALOG_REQUEST);
             dialog.show();
         }else{
             Toast.makeText(this, "You can't make map requests", Toast.LENGTH_SHORT).show();
         }
         return false;
     }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "onActivityResult: called.");
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_ENABLE_GPS: {
+                if(mLocationPermissionGranted){
+                    myCustomerMessageFragment.getChatrooms();
+                    myCustomerMessageFragment.getUserDetails();
+                }
+                else{
+                    getLocationPermission();
+                }
+            }
+        }
 
+    }
+    public boolean isMapsEnabled(){
+        final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
+
+        if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+            buildAlertMessageNoGps();
+            return false;
+        }
+        return true;
+    }
+    private void buildAlertMessageNoGps() {
+        final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setMessage("This application requires GPS to work properly, do you want to enable it?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                        Intent enableGpsIntent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivityForResult(enableGpsIntent, PERMISSIONS_REQUEST_ENABLE_GPS);
+                    }
+                });
+        final android.app.AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    private boolean isLocationServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
+            if("com.codingwithmitch.googledirectionstest.services.LocationService".equals(service.service.getClassName())) {
+                Log.d(TAG, "isLocationServiceRunning: location service is already running.");
+                return true;
+            }
+        }
+        Log.d(TAG, "isLocationServiceRunning: location service is not running.");
+        return false;
+    }
+
+
+    public boolean checkMapServices(){
+        if(isServicesOK()){
+            if(isMapsEnabled()){
+                return true;
+            }
+        }
+        return false;
+    }
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[],
@@ -694,35 +668,6 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG, "onActivityResult: called.");
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ENABLE_GPS: {
-                if(mLocationPermissionGranted){
-                    getUserDetails();
-                }
-                else{
-                    getLocationPermission();
-                }
-            }
-        }
-
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if(checkMapServices()){
-            if(mLocationPermissionGranted){
-                getUserDetails();
-            }
-            else{
-                getLocationPermission();
-            }
-        }
-    }
 
     private void getAllUser()
     {
