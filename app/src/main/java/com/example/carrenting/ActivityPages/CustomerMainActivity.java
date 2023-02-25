@@ -67,6 +67,7 @@ import com.example.carrenting.R;
 import com.example.carrenting.Service.Map.ChatroomActivity;
 import com.example.carrenting.Service.Map.LocationService;
 import com.example.carrenting.Service.Map.MapMainActivity;
+import com.example.carrenting.Service.Map.ProfileActivity;
 import com.example.carrenting.Service.Map.UserListFragment;
 import com.example.carrenting.Service.UserAuthentication.LoginActivity;
 import com.google.android.gms.common.ConnectionResult;
