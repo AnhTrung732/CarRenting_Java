@@ -38,7 +38,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 public class LoginActivity extends AppCompatActivity {
     private EditText edtTxt_email, edtTxt_password;
     private TextView txtSignUp;
-    private Button btn_signIn;
+    private Button btn_signIn, btn_forget;
     private TextView tvForgotPassword;
     private FirebaseAuth mAuth;
     private ProgressDialog progressDialog;
@@ -56,7 +56,7 @@ public class LoginActivity extends AppCompatActivity {
         edtTxt_email = findViewById(R.id.edtTxt_email);
         edtTxt_password = findViewById(R.id.edtText_password);
         btn_signIn = findViewById(R.id.btn_signIn);
-        tvForgotPassword = findViewById(R.id.tvForgotPassword);
+        btn_forget = findViewById(R.id.btn_forget);
         progressDialog = new ProgressDialog(this);
 
         overridePendingTransition(R.anim.anim_in_left,R.anim.anim_out_right);
@@ -73,7 +73,7 @@ public class LoginActivity extends AppCompatActivity {
                 nextRegister();
             }
         });
-        tvForgotPassword.setOnClickListener(new View.OnClickListener() {
+        btn_forget.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 forgotPassword();

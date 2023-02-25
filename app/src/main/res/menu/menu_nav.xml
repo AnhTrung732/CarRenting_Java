@@ -4,19 +4,19 @@
         <item android:id="@+id/nav_home"
             android:title="@string/nav_home"
             android:icon="@drawable/ic_home"/>
-        <item android:id="@+id/nav_activity"
-            android:title="@string/nav_activity"
-            android:icon="@drawable/ic_activity"/>
-        <item android:id="@+id/nav_message"
-            android:title="@string/nav_message"
-            android:icon="@drawable/ic_message"/>
         <item android:id="@+id/nav_map"
             android:title="@string/nav_map"
             android:icon="@drawable/google_maps"/>
+        <item android:id="@+id/nav_activity"
+            android:title="@string/nav_activity"
+            android:icon="@drawable/ic_activity"/>
     </group>
 
     <item android:title="@string/nav_user">
         <menu>
+            <item android:id="@+id/nav_message"
+                android:title="@string/nav_message"
+                android:icon="@drawable/ic_message"/>
             <item android:id="@+id/nav_infor"
                 android:title="@string/nav_infor"/>
 

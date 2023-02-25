@@ -151,8 +151,8 @@
         android:id="@+id/textView11"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="68dp"
-        android:layout_marginTop="68dp"
+        android:layout_marginStart="72dp"
+        android:layout_marginTop="36dp"
         android:text="Chưa có tài khoản ? Hãy "
         app:layout_constraintStart_toStartOf="@+id/btn_signIn"
         app:layout_constraintTop_toBottomOf="@+id/btn_signIn" />
@@ -169,20 +169,6 @@
         app:layout_constraintStart_toEndOf="@+id/textView11"
         app:layout_constraintTop_toTopOf="@+id/textView11"
         app:layout_constraintVertical_bias="1.0" />
-
-
-    <TextView
-        android:id="@+id/tvForgotPassword"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="116dp"
-        android:layout_marginTop="28dp"
-        android:clickable="true"
-        android:text="Quên mật khẩu ?"
-        android:textColor="@color/sky"
-        android:textSize="@dimen/_11sdp"
-        app:layout_constraintStart_toStartOf="@+id/btn_signIn"
-        app:layout_constraintTop_toBottomOf="@+id/btn_signIn" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,5 @@
 package com.example.carrenting.ActivityPages;
 
-import static android.content.ContentValues.TAG;
 import static com.example.carrenting.Service.Map.Constants.ERROR_DIALOG_REQUEST;
 import static com.example.carrenting.Service.Map.Constants.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION;
 import static com.example.carrenting.Service.Map.Constants.PERMISSIONS_REQUEST_ENABLE_GPS;
@@ -59,7 +58,6 @@ import com.example.carrenting.Adapter.ChatroomRecyclerAdapter;
 import com.example.carrenting.FragmentPages.Customer.CustomerActivityFragment;
 import com.example.carrenting.FragmentPages.Customer.CustomerHomeFragment;
 import com.example.carrenting.FragmentPages.Customer.CustomerMapFragment;
-import com.example.carrenting.FragmentPages.Customer.CustomerMessageFragment;
 import com.example.carrenting.FragmentPages.Customer.UserInfor.MyProfileFragment;
 import com.example.carrenting.Model.Chatroom;
 import com.example.carrenting.Model.User;
@@ -176,11 +174,6 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
 /*                case R.id.user:
                     replaceFragment(new UserFragment());
                     break;*/
-                case R.id.message:
-                    replaceFragment(new CustomerMessageFragment());
-                    mNavigationView.setCheckedItem(R.id.nav_message);
-                    mCurrentFragment = FRAGMENT_MESSAGE;
-                    break;
                 case R.id.map:
                     inflateMapListFragment();
                     mNavigationView.setCheckedItem(R.id.nav_map);
@@ -234,18 +227,19 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
             mCurrentFragment = FRAGMENT_ACTIVITY;
         }
     }
-    private void openMessageFragment() {
-        if (mCurrentFragment != FRAGMENT_MESSAGE)
-        {
-            replaceFragment(new CustomerMessageFragment());
-            mCurrentFragment = FRAGMENT_MESSAGE;
-        }
-    }
     private void openMapFragment() {
         if (mCurrentFragment != FRAGMENT_MAP)
         {
             inflateMapListFragment();
             mCurrentFragment = FRAGMENT_MAP;
+        }
+    }
+    private void openMessageFragment() {
+        if (mCurrentFragment != FRAGMENT_MESSAGE)
+        {
+            Intent i = new Intent(CustomerMainActivity.this, ChatMainActivity.class);
+            startActivity(i);
+            ((Activity) CustomerMainActivity.this).overridePendingTransition(0, 0);
         }
     }
     private void openMyProfileFragment() {
@@ -291,15 +285,14 @@ public class CustomerMainActivity extends AppCompatActivity implements Navigatio
             openActivityFragment();
             mbottomNavigationView.getMenu().findItem(R.id.activity).setChecked(true);
         }
-        else if (id == R.id.nav_message)
-        {
-            openMessageFragment();
-            mbottomNavigationView.getMenu().findItem(R.id.message).setChecked(true);
-        }
         else if (id == R.id.nav_map)
         {
             openMapFragment();
             mbottomNavigationView.getMenu().findItem(R.id.map).setChecked(true);
+        }
+        else if (id == R.id.nav_message)
+        {
+            openMessageFragment();
         }
         else if (id == R.id.nav_infor)
         {
