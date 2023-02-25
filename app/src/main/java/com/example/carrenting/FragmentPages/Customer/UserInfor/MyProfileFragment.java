@@ -386,6 +386,10 @@ public class MyProfileFragment extends Fragment {
         {
             edtStreet.setText(user.getStreet().toString().trim());
         }
+        if (user.getCity() != null)
+        {
+            edtCity.setText(user.getCity().toString().trim());
+        }
         if (user.getPostalCode() != null)
         {
             edtPostalCode.setText(user.getPostalCode().toString().trim());

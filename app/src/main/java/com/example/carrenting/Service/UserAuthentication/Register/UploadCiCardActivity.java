@@ -142,7 +142,7 @@ public class UploadCiCardActivity extends AppCompatActivity {
 
         StorageReference fileReference_behind = storageReference_behind.child(System.currentTimeMillis()
                 + "." + getFileExtension(behindUri));
-        fileReference_behind.putFile(frontUri)
+        fileReference_behind.putFile(behindUri)
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {

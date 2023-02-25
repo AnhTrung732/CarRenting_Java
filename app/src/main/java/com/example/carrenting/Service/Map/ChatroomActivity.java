@@ -86,17 +86,13 @@ public class ChatroomActivity extends AppCompatActivity implements
 
         findViewById(R.id.checkmark).setOnClickListener(this);
 
-
         mDb = FirebaseFirestore.getInstance();
-
 
         getIncomingIntent();
         initChatroomRecyclerView();
         getChatroomUsers();
 
     }
-
-
 
 
     private void getChatMessages(){
@@ -125,7 +121,6 @@ public class ChatroomActivity extends AppCompatActivity implements
                             mMessages.add(message);
                             mChatMessageRecyclerView.smoothScrollToPosition(mMessages.size() - 1);
                         }
-
                     }
                     mChatMessageRecyclerAdapter.notifyDataSetChanged();
 
