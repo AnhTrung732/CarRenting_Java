@@ -180,4 +180,18 @@
         app:layout_constraintTop_toBottomOf="@+id/btnSendCode"
         android:focusable="true"
         tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/tvValidateLater"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="48dp"
+        android:layout_marginTop="20dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="Hoặc tôi sẽ xác nhận sau"
+        android:textColor="@color/sky"
+        app:layout_constraintStart_toStartOf="@+id/textview"
+        app:layout_constraintTop_toBottomOf="@+id/textview"
+        tools:ignore="HardcodedText" />
 </androidx.constraintlayout.widget.ConstraintLayout>
